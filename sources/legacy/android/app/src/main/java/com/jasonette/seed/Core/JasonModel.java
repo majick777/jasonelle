@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 
+import com.jasonette.seed.R;
 import com.jasonette.seed.Helper.JasonHelper;
 import com.jasonette.seed.Launcher.Launcher;
 
@@ -13,6 +14,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -28,6 +30,7 @@ import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.CacheControl;
 
 public class JasonModel{
     public String url;
@@ -164,11 +167,37 @@ public class JasonModel{
                 Uri uri = b.build();
                 url = uri.toString();
             }
-            request = builder
+			Log.d("Warning", "Load URL: "+url);
+			
+			String main_url = Launcher.MAIN_URL;
+			String target_host = Launcher.HOST;
+			String target_alt_host = Launcher.ALT_HOST;
+			String app_protocol = Launcher.APP_PROTOCOL;
+			Log.d("Warning", "Main URL: "+main_url);
+
+			URL urlobject = new URL(url);
+			String host = urlobject.getHost();
+			String scheme = urlobject.getProtocol();
+			
+            if (url.endsWith(".json") || url.equals(main_url) || url.startsWith(scheme) || host.equals(target_host) || host.equals(target_alt_host)) {
+			    // do not cache main JSON loading
+				String timestamp = Long.toString(System.currentTimeMillis() / 1000L);
+				String sep = url.contains("?") ? "&" : "?";
+				url = url + sep + "=timestamp=" + timestamp;
+				Log.d("Warning", "Bypassed Cache using URL: "+url);
+                /* request = builder
+                    .url(url)
+					.header("Cache-Control", "no-cache, no-store, max-age=0")
+                    .header("Pragma", "no-cache")
+                    .cacheControl(new CacheControl.Builder().noCache().noStore().build())
+                    .build();
+				*/
+			} 
+			// else { 
+                request = builder
                     .url(url)
                     .build();
-
-
+			// } 
 
             client.newCall(request).enqueue(new Callback() {
                 @Override

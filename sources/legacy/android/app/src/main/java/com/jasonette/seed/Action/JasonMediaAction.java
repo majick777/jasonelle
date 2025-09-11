@@ -61,7 +61,7 @@ public class JasonMediaAction {
                 JasonHelper.dispatchIntent(action, data, event, context, intent, callback);
             }
         } catch (Exception e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
     // Util for play
@@ -83,7 +83,7 @@ public class JasonMediaAction {
 
             JasonHelper.next("success", action, new JSONObject(), event, context);
         } catch (Exception e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
 
@@ -128,7 +128,7 @@ public class JasonMediaAction {
         } catch (SecurityException e){
             JasonHelper.permission_exception("$media.picker", context);
         } catch (Exception e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
 
     }
@@ -170,8 +170,9 @@ public class JasonMediaAction {
             }
 
             // We need at least 100 ms to call the success with the result
-            // If not then it will be omitted since it will too fast 
-            // for the system to process.
+            // If not then it will be omitted since it will too fast
+            // for the system to process
+          /* this is being weird
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -181,15 +182,16 @@ public class JasonMediaAction {
                         ret.put("camera", ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
                         JasonHelper.next("success", action, ret, event, context);
                     }  catch (Exception e) {
-                        Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                        // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
                     }
                 }
             }, 100); // Millisecond 1000 = 1 sec
+          */
 
         } catch (SecurityException e){
             JasonHelper.permission_exception("$media.permissions", context);
         } catch (Exception e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
 
@@ -280,7 +282,7 @@ public class JasonMediaAction {
         } catch (SecurityException e){
             JasonHelper.permission_exception("$media.camera", context);
         } catch (Exception e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
 
@@ -329,12 +331,12 @@ public class JasonMediaAction {
                     ret.put("content_type", "image/jpeg");
                     JasonHelper.next("success", action, ret, event, context);
                 } catch (Exception e) {
-                    Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                    // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
                 }
             }
 
         } catch (Exception e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
     private File createFile(String type, Context context) throws IOException {

@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">${app_name}</string>
+    <string name="app_version">${app_version}</string>
+	<string name="app_protocol">${app_protocol}</string>
+    <string name="url">${url}</string>
+    <string name="host">${host}</string>	
+    <string name="alt_host">${alt_host}</string>	
+    <string name="preload_url">${preload_url}</string>
+</resources>

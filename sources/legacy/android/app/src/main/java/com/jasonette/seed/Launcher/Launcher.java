@@ -1,5 +1,6 @@
 package com.jasonette.seed.Launcher;
 
+import com.jasonette.seed.BuildConfig;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
@@ -9,6 +10,7 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.webkit.WebView;
 
 import com.bumptech.glide.request.target.ViewTarget;
 import com.jasonette.seed.Core.JasonModel;
@@ -39,24 +41,69 @@ import com.onesignal.OneSignal;
 import com.onesignal.debug.LogLevel;
 import com.onesignal.Continue;
 
+// Qonversion
+import com.qonversion.android.sdk.Qonversion;
+import com.qonversion.android.sdk.QonversionConfig;
+import com.qonversion.android.sdk.dto.QLaunchMode;
+
 public class Launcher extends Application {
 
-  // NOTE: Replace the below with your own ONESIGNAL_APP_ID
-  private static final String ONESIGNAL_APP_ID = "########-####-####-####-############";
+	// global backgroundWebview agent for triggering javascript in context
+	public WebView backgroundWebview;
 
-  private void setupOneSignal() {
-    // Verbose Logging set to help debug issues, remove before releasing your app.
-    OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);
+    // --- config variables ---
+	public static String APP_VERSION;
+	public static String APP_PROTOCOL;
+	public static String HOST;
+	public static String ALT_HOST;
+	public static String MAIN_URL;
+	public static String PRELOAD_URL;
+    private static final String ONESIGNAL_APP_ID = BuildConfig.ONESIGNAL_APP_ID;
+    private static final String ONESIGNAL_START_PROMPT = BuildConfig.ONESIGNAL_START_PROMPT;
+    private static final String QONVERSION_PROJECT_ID = BuildConfig.QONVERSION_PROJECT_KEY;
 
-    // OneSignal Initialization
-    OneSignal.initWithContext(this, ONESIGNAL_APP_ID);
+    private void setupOneSignal() {
 
-    // requestPermission will show the native Android notification permission prompt.
-    // NOTE: It's recommended to use a OneSignal In-App Message to prompt instead.
-    OneSignal.getNotifications().requestPermission(false, Continue.none());
-  }
+		// bug out early if no OneSignal App ID
+		Log.d("Warning", "OneSignal App ID: "+this.ONESIGNAL_APP_ID);
+		if (this.ONESIGNAL_APP_ID == "") {return;}
 
-  private JSONObject handlers;
+        // Verbose Logging set to help debug issues, remove before releasing your app.
+        OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);
+
+        // OneSignal Initialization
+        OneSignal.initWithContext(this, this.ONESIGNAL_APP_ID);
+
+        // requestPermission will show the native Android notification permission prompt.
+        // NOTE: It's recommended to use a OneSignal In-App Message to prompt instead.
+		if (this.ONESIGNAL_START_PROMPT == "1") {
+			OneSignal.getNotifications().requestPermission(false, Continue.none());
+		}
+
+		// TODO: load OneSignal observers
+		// Intent intent1 = new Intent(this, OneSignalPermissionObserver.class); startActivity(intent1);
+		// Intent intent2 = new Intent(this, OneSignalSubscriptionObserver.class); startActivity(intent2);
+		// Intent intent3 = new Intent(this, OneSignalForegroundObserver.class); startActivity(intent3);
+		// OneSignal.setNotificationOpenedHandler(new OneSignalPushClickObserver());
+    }
+
+    // --- Qonversion ---
+    private void setupQonversion() {
+
+	  // bug out early if no Qonversion Project ID
+	  Log.d( "Warning", "Qonversion Project ID: "+this.QONVERSION_PROJECT_ID);
+	  if (this.QONVERSION_PROJECT_ID == "" ) {return;}
+
+      // set qonversion config
+      final QonversionConfig qonversionConfig = new QonversionConfig.Builder(
+        this, this.QONVERSION_PROJECT_ID, QLaunchMode.SubscriptionManagement
+      ).build();
+
+      // initialize qonversion
+      Qonversion.initialize(qonversionConfig);
+    }
+
+    private JSONObject handlers;
     private JSONObject global;
     private JSONObject env;
     private JSONObject models;
@@ -77,16 +124,18 @@ public class Launcher extends Application {
     public static Context getCurrentContext() {
         return currentContext;
     }
+
+	// set current context
     public static void setCurrentContext(Context context) {
         currentContext = context;
     }
 
     public void setTabModel(String url, JasonModel model) {
-       try {
+        try {
             models.put(url, model);
-       } catch (Exception e) {
-           Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
-       }
+        } catch (Exception e) {
+            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+        }
     }
     public JasonModel getTabModel(String url) {
         try {
@@ -99,7 +148,6 @@ public class Launcher extends Application {
             return null;
         }
     }
-
 
     public JSONObject getEnv(){
         return this.env;
@@ -132,6 +180,18 @@ public class Launcher extends Application {
     public Launcher() {
     }
 
+    /* private static Launcher instance;
+
+    @Override
+    public void onCreate() {
+      super.onCreate();
+      instance = this;
+    }
+
+    public static Launcher getInstance() {
+      return instance;
+    } */
+
     @Override
     public void onCreate() {
 
@@ -140,8 +200,18 @@ public class Launcher extends Application {
 
         ViewTarget.setTagId(R.id.glide_request);
 
+		this.APP_VERSION = getString(R.string.app_version);
+		this.APP_PROTOCOL = getString(R.string.app_protocol);
+		this.HOST = getString(R.string.host);
+		this.ALT_HOST = getString(R.string.alt_host);
+		this.MAIN_URL = getString(R.string.url);
+		this.PRELOAD_URL = getString(R.string.preload_url);
+
         // OneSignal
         this.setupOneSignal();
+
+        // Qonversion
+        this.setupQonversion();
 
         // Look for all extensions and initialize them if they have initialize class methods
         try {

@@ -73,6 +73,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -288,7 +289,7 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
         } else {
             if (intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
                 // first time launch
-                String launch_url = getString(R.string.launch);
+                String launch_url = getString(R.string.preload_url);
                 if (launch_url != null && launch_url.length() > 0) {
                     // if preload is specified, use that url
                     preload = (JSONObject)JasonHelper.read_json(launch_url, JasonViewActivity.this);
@@ -969,7 +970,6 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
 
                     className = type.substring(1, type.lastIndexOf('.'));
 
-
                     // Resolve classname by looking up the json files
                     String resolved_classname = null;
                     String jr = null;
@@ -996,7 +996,11 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
                     }
 
                     methodName = type.substring(type.lastIndexOf('.') + 1);
-
+					
+					Log.d("Warning", "Filename: "+fileName);
+					Log.d("Warning", "Classname: "+className+" - Resolved: "+resolved_classname);
+					Log.d("Warning", "Methodname: "+methodName);
+					
                     // Look up the module registry to see if there's an instance already
                     // 1. If there is, use that
                     // 2. If there isn't:
@@ -1019,9 +1023,13 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
 
 
             }
+        } catch (InvocationTargetException ite) {
+            Throwable cause = ite.getCause();
+            // cause.printStackTrace(); // shows the real error
+			Log.d("Warning", "Invocation failed: " + cause, cause);
         } catch (Exception e){
             // Action doesn't exist yet
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            Log.d("Warning", "Method failed: " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
             try {
 
                 JSONObject alert_action = new JSONObject();
@@ -1031,9 +1039,9 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
                 options.put("title", "Not implemented");
                 String type = action.getString("type");
                 options.put("description", action.getString("type") + " is not implemented yet.");
+				Log.d("Warning", action.getString("type") + " is not implemented yet.");
 
                 alert_action.put("options", options);
-
 
                 call(alert_action.toString(), new JSONObject().toString(), "{}", JasonViewActivity.this);
 
@@ -1982,6 +1990,12 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
                                         });
                                     }
                                     backgroundCurrentView = backgroundWebview;
+
+                                    // set background view to global
+                                    // Launcher app = Launcher.getInstance();
+                                    Launcher app = (Launcher) getApplication();
+                                    app.backgroundWebview = backgroundWebview;
+
                                 } else if (type.equalsIgnoreCase("camera")) {
                                     int side = JasonVisionService.FRONT;
                                     if (background.has("options")) {

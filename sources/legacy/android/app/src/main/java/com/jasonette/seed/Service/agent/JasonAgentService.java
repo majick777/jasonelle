@@ -4,12 +4,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
@@ -19,17 +25,24 @@ import com.jasonette.seed.Core.JasonParser;
 import com.jasonette.seed.Core.JasonViewActivity;
 import com.jasonette.seed.Helper.JasonHelper;
 import com.jasonette.seed.Launcher.Launcher;
+import com.jasonette.seed.R;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Locale;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -45,6 +58,7 @@ public class JasonAgentService {
     // Initialize
     public JasonAgentService() {
     }
+
     private class JasonAgentInterface {
 
         private WebView agent;
@@ -371,6 +385,7 @@ public class JasonAgentService {
                 } else {
                     agent.setWebChromeClient(new WebChromeClient());
                 }
+
                 agent.setWebViewClient(new WebViewClient() {
                     @Override public void onPageFinished(WebView view, final String url) {
                         // Inject agent.js
@@ -418,6 +433,44 @@ public class JasonAgentService {
                             Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
                         }
                     }
+					
+					// added to attempt non-caching of JSON files (fails: does not catch main URL)
+					/* @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+						Uri uri = request.getUrl();
+						String main_url = context.getResources().getString(R.string.url);
+                        if (uri != null && uri.toString().endsWith(".json") && uri.toString().equals(main_url)) {
+							Log.d("Warning", "Bypassing cache for .json : "+uri.toString());
+                            try {
+                                URL url = new URL(uri.toString());
+                                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                                conn.setRequestMethod("GET");
+                                conn.setUseCaches(false);
+                                conn.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
+                                conn.setRequestProperty("Pragma", "no-cache");
+                                conn.setRequestProperty("Expires", "0");
+                                conn.connect();
+
+                                String contentType = conn.getContentType();
+                                String mime = "application/json";
+                                String encoding = "utf-8";
+                                if (contentType != null) {
+                                    String[] parts = contentType.split(";");
+                                    if (parts.length > 0) mime = parts[0].trim();
+                                    for (String p : parts) {
+                                        p = p.trim();
+                                        if (p.startsWith("charset=")) encoding = p.substring(8);
+                                    }
+                                }
+                                InputStream is = conn.getInputStream();
+                                return new WebResourceResponse(mime, encoding, is);
+                            } catch (IOException e) {
+                                Log.w("WebView", "Failed to load JSON: " + uri, e);
+                                return super.shouldInterceptRequest(view, request);
+                            }
+                        }
+                        return super.shouldInterceptRequest(view, request);
+					} */
+					
                     @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
                         // resolve
                         final AtomicReference<JSONObject> notifier = new AtomicReference<>();
@@ -436,7 +489,35 @@ public class JasonAgentService {
                                 return false;
                             }
 
+						    // added: open external links in browser
+                            try {
+                                Log.d("Warning","Opening URL "+url);
+                                URL urlobject = new URL(url);
+                                String host = urlobject.getHost();
+                                String scheme = urlobject.getProtocol();
 
+                                // String app_protocol = context.getResources().getString(R.string.app_protocol);
+						        // String target_host = context.getResources().getString(R.string.host);
+                                // String target_alt_host = context.getResources().getString(R.string.alt_host);
+                                String app_protocol = Launcher.APP_PROTOCOL;
+						        String target_host = Launcher.HOST;
+                                String target_alt_host = Launcher.ALT_HOST;
+
+                                if ((host != null) && !target_host.equalsIgnoreCase(host) && !target_alt_host.equalsIgnoreCase(host)) {
+                                    Log.d("Warning","External Host: "+host);
+                                    if (!app_protocol.equals(scheme)) {
+                                      Log.d("Warning","Non-app Scheme: "+scheme);
+                                      // open in external browser window
+                                      Intent intent = new Intent(Intent.ACTION_VIEW);
+                                      Uri uri = Uri.parse(url);
+                                      intent.setData(uri);
+                                      Launcher.getCurrentContext().startActivity(intent);
+                                      return false;
+                                    }
+					            }
+						    } catch (MalformedURLException e) {
+						    	Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+						    }
 
                             if(view.getHitTestResult().getType() > 0){
                                 if (options.has("action")) {
@@ -452,8 +533,6 @@ public class JasonAgentService {
                                     } else {
                                         resolved_action = options.get("action");
                                     }
-
-
 
                                     /* set $jason */
                                     JSONObject u = new JSONObject();
@@ -530,7 +609,7 @@ public class JasonAgentService {
                 settings.setAllowFileAccess(true);
                 // settings.setAppCacheEnabled(true);
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-                
+
                 // Check for special options in background webview
                 /* Example JSON
                 "body": {

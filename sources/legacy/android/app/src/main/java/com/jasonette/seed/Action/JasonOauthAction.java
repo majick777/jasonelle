@@ -492,7 +492,7 @@ public class JasonOauthAction {
 
                 JasonHelper.next("error", intent_options.getJSONObject("action"), error, intent_options.getJSONObject("event"), (Context)intent_options.get("context"));
             } catch(JSONException e) {
-                Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
             }
         }
     }
@@ -818,7 +818,7 @@ public class JasonOauthAction {
             error.put("data", err.toString());
             JasonHelper.next("error", action, error, event, context);
         } catch(JSONException e) {
-            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
 }
