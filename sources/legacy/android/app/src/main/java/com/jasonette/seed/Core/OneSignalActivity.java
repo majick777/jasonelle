@@ -44,6 +44,9 @@ import org.json.JSONObject;
 import org.json.JSONException;
 import android.util.Log;
 
+// TODO: check this for examples
+// ref: https://github.com/OneSignal/OneSignal-Android-SDK/blob/7b2b588ba0bddfbfd65a2fe9cae5f353ef966a0f/Examples/OneSignalDemo/app/src/main/java/com/onesignal/sdktest/application/MainApplication.java#L135
+
 public class OneSignalActivity extends Activity {
 
 	// --- OneSignal Permission Observer ---
@@ -77,14 +80,15 @@ public class OneSignalActivity extends Activity {
 	  @Override
 	  public void onNotificationPermissionChange(boolean granted) {
 		String granted_string = granted ? "1" : "0";
-    JSONObject res = new JSONObject();
-    try {
-      res.put("granted", granted_string);
-      JasonHelper.next("success", this.action, res, this.event, this.context);
-    } catch (JSONException e) {
-      Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
-    }
-    }
+		Log.d("Debug", "OneSignal Notification Permission Changed: "+granted_string);
+        JSONObject res = new JSONObject();
+        try {
+          res.put("granted", granted_string);
+          JasonHelper.next("success", this.action, res, this.event, this.context);
+        } catch (JSONException e) {
+          Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+        }
+      }
 
 	  // @Override
 	  protected void onDestroy() {
@@ -123,18 +127,27 @@ public class OneSignalActivity extends Activity {
 	  @Override
 	  public void onPushSubscriptionChange(PushSubscriptionChangedState changedState) {
 		// $agent.trigger("onesignal.status");
-		Log.i("OneSignal", "current subscription ID: " + changedState.getCurrent().getId());
+		// Log.i("OneSignal", "current subscription ID: " + changedState.getCurrent().getId());
         // String user_id = changedState.getCurrent().getId();
 		// String push_token = changedState.getCurrent().getToken();
-		// String opted_in = changedState.getCurrent().getOptedIn();
-		// JSONObject res = new JSONObject();
-		// res.put("user_id", user_id);
-		// res.put("push_token", push_token);
-		// res.put("subscribed", subscribed);
-		// res.put("permission_status", permission_status);
-		// res.put("subscription_status", subscription_status);
-        JSONObject res = changedState.getCurrent().toJSONObject();
-        JasonHelper.next("success", this.action, res, this.event, this.context);
+		Boolean opted_in = changedState.getCurrent().getOptedIn();
+		String status = opted_in ? "1" : "0";
+		Log.d("Debug", "OneSignal Notification Permission Changed: "+status);
+
+		JSONObject res = new JSONObject();
+		try {
+			res.put("status",status);
+			// res.put("user_id", user_id);
+			// res.put("push_token", push_token);
+			// res.put("subscribed", subscribed);
+			// res.put("permission_status", permission_status);
+			// res.put("subscription_status", subscription_status);
+			// JSONObject res = changedState.getCurrent().toJSONObject();
+			JasonHelper.next("success", this.action, res, this.event, this.context);
+        } catch (JSONException e) {
+          Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+        }
+
 	  }
 
 	  // @Override
@@ -175,23 +188,24 @@ public class OneSignalActivity extends Activity {
       @Override
 	  public void onWillDisplay(INotificationWillDisplayEvent event) {
 
-      // prevent the notification from being displayed while in the foreground
-      event.preventDefault();
+        Log.d("OneSignal", "Foreground Notification Event");
+        // prevent the notification from being displayed while in the foreground
+        event.preventDefault();
 
-      String id = event.getNotification().getNotificationId();
-		  String title = event.getNotification().getTitle();
-		  String body = event.getNotification().getBody();
+        String id = event.getNotification().getNotificationId();
+		String title = event.getNotification().getTitle();
+		String body = event.getNotification().getBody();
 		// Map<String, Object> additionalData = event.getAdditionalData();
 		// if (additionalData != null && additionalData.containsKey("key")) {
 		//	String calue = (String) additionalData.get("key");
 		// }
-		Log.d("OneSignal", "Foreground notification received: " + title);
 
         JSONObject res = new JSONObject();
         try {
           res.put("id", id);
           res.put("title", title);
           res.put("body", body);
+		  Log.d("OneSignal", "Notification Data: " + res.toString());
           JasonHelper.next("success", this.action, res, this.event, this.context);
         } catch (JSONException e) {
           Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());

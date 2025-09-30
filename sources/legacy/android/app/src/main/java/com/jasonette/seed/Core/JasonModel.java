@@ -160,9 +160,7 @@ public class JasonModel{
                 while (keys.hasNext()) {
                     String key = (String) keys.next();
                     String val = session.getJSONObject("body").getString(key);
-
                     b.appendQueryParameter(key, val);
-
                 }
                 Uri uri = b.build();
                 url = uri.toString();
@@ -183,21 +181,19 @@ public class JasonModel{
 			    // do not cache main JSON loading
 				String timestamp = Long.toString(System.currentTimeMillis() / 1000L);
 				String sep = url.contains("?") ? "&" : "?";
-				url = url + sep + "=timestamp=" + timestamp;
+				url = url + sep + "timestamp=" + timestamp;
 				Log.d("Warning", "Bypassed Cache using URL: "+url);
-                /* request = builder
+                request = builder
                     .url(url)
 					.header("Cache-Control", "no-cache, no-store, max-age=0")
                     .header("Pragma", "no-cache")
                     .cacheControl(new CacheControl.Builder().noCache().noStore().build())
                     .build();
-				*/
-			} 
-			// else { 
+			} else { 
                 request = builder
                     .url(url)
                     .build();
-			// } 
+			} 
 
             client.newCall(request).enqueue(new Callback() {
                 @Override

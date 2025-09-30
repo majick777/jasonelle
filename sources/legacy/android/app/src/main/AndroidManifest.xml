@@ -54,8 +54,7 @@
          -->
 
         <!-- Uncomment below to support push notification -->
-        <!--
-        <service
+        <!-- <service
             android:name=".Service.push.JasonPushRegisterService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
@@ -66,8 +65,7 @@
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
-        </service>
-        -->
+        </service> -->
 
 		<!-- https://developer.android.com/training/app-links/deep-linking#java -->
         <activity

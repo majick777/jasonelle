@@ -52,29 +52,38 @@ public class JasonOnesignalAction {
      *            }
      */
 
-    Log.d("Debug", "OneSignal Login");
+    Log.d("Debug", "OneSignal Login Action: " + action.toString());
+    Log.d("Debug", "OneSignal Login Data: " + data.toString());
     try {
-      if (action.has("options")) {
-        JSONObject options = action.getJSONObject("options");
-        if (options.has("externalid")){
-
-          // REGISTER ID
-          String externalid = options.getString("externalid");
+      // if (action.has("options")) {
+      if (data.has("$jason")) {
+        // JSONObject options = action.getJSONObject("options");
+		// Log.d("Debug", "OneSignal Login options ", options );
+        JSONObject jason = data.getJSONObject("$jason");
+		Log.d("Debug", "OneSignal Login jason " + jason.toString());
+        // if (options.has("externalid")){
+        if (jason.has("externalid")){
+          // String externalid = options.getString("externalid");
+          String externalid = jason.getString("externalid");
+          Log.d("Debug", "OneSignal Login with externalid " + externalid);
           OneSignal.login(externalid);
-          Log.d("Debug", "OneSignal Login " + externalid);
-          JasonHelper.next("success", action, new JSONObject(), event, context);
+		  // JSONObject res = new JSONObject();
+		  // res.put("externalid",externalid);
+          JasonHelper.next("success", action, data, event, context);
         } else {
           JSONObject err = new JSONObject();
-          err.put("message", "externalid is empty");
+          err.put("message", "$onesignal.login externalid is missing");
+		  Log.d("Debug", "$onesignal.login externalid is missing");
           JasonHelper.next("error", action, err, event, context);
         }
       } else {
         JSONObject err = new JSONObject();
         err.put("message", "$onesignal.login has no options defined");
+		Log.d("Debug", "$onesignal.login has no options defined");
         JasonHelper.next("error", action, err, event, context);
       }
     } catch (Exception e) {
-      Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+      Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
     }
   }
 
@@ -85,34 +94,50 @@ public class JasonOnesignalAction {
     JasonHelper.next("success", action, new JSONObject(), event, context);
   }
 
+  // get external id
+  public void info(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
+	String userid = OneSignal.getUser().getOnesignalId();
+	String externalid = OneSignal.getUser().getExternalId();
+	// String user = OneSignal.getUser().toString();
+    // Log.d("Debug", "OneSignal Info: " + user);
+    try {
+	  JSONObject ret = new JSONObject();
+	  ret.put("userid", userid);
+      ret.put("externalid", externalid);
+      JasonHelper.next("success", action, ret, event, context);
+    } catch (JSONException e) {
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	}
+  }
+
   // check if can request permissions with getCanRequestPermission()
-  public Boolean canrequest(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+  public void canrequest(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	Log.d("Debug", "OneSignal getCanRequestPermission");
-	Boolean canrequest = OneSignal.getNotifications().getCanRequestPermission();
+	Boolean result = OneSignal.getNotifications().getCanRequestPermission();
+	String canrequest = result ? "1" : "0";
     JSONObject ret = new JSONObject();
     try {
       ret.put("canrequest", canrequest);
       JasonHelper.next("success", action, ret, event, context);
-      return canrequest;
     } catch (JSONException e) {
-	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	}
-    return null;
   }
 
   // get existing permission with getPermission()
-  public Boolean permission(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
-	Log.d("Debug", "OneSignal getPermission");
-	Boolean permission = OneSignal.getNotifications().getPermission();
+  public void permission(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+	Boolean result = OneSignal.getNotifications().getPermission();
+	String permission = result ? "1" : "0";
+	Log.d("Debug", "OneSignal getPermission: " + permission);
     JSONObject ret = new JSONObject();
     try {
       ret.put("permission", permission);
       JasonHelper.next("success", action, ret, event, context);
-      return permission;
+      // return permission;
     } catch (JSONException e) {
 	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	}
-	 return null;
+	// return null;
   }
 
   // permission prompt with requestPermission()
@@ -120,11 +145,13 @@ public class JasonOnesignalAction {
   public void prompt(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	Log.d("Debug", "OneSignal requestPermission");
     // try {
-	  // if (this.canrequest(action, data, event, context)) {
         OneSignal.getNotifications().requestPermission(true, Continue.with(r -> {
           if (r.isSuccess()) {
-            Boolean granted = false;
-            if (r.getData()) {granted = true;}
+            String granted = "0";
+            if (r.getData()) {
+				Log.d("Debug", "Permission Result: "+r.getData());
+				granted = "1";
+			}
             JSONObject ret = new JSONObject();
             try {
               ret.put("granted", granted);
@@ -140,43 +167,101 @@ public class JasonOnesignalAction {
               err.put("message", "request permissions failed");
               JasonHelper.next("error", action, err, event, context);
             } catch (JSONException e) {
-                Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
             }
           }
         }));
-	  // }
 	// } catch (JSONException e) {
 	  // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	// }
+  }
+
+  // trigger with addTrigger()
+  public void addtrigger(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+	Log.d("Debug", "OneSignal addTrigger");
+    try {
+      // if (action.has("options")) {
+      if (data.has("$jason")) {
+		// JSONObject options = action.getJSONObject("options");
+        JSONObject jason = data.getJSONObject("$jason");
+        if (jason.has("key") && jason.has("value")) {
+		  OneSignal.getInAppMessages().addTrigger(jason.getString("key"), jason.getString("value"));
+        } else {
+		  JSONObject err = new JSONObject();
+		  if (!jason.has("key") && !jason.has("value")) {
+            err.put("message", "$onesignal.addtrigger has no key or value defined");
+		  } else if (!jason.has("key")) {
+            err.put("message", "$onesignal.addtrigger has no key defined");
+		  }	else if (!jason.has("value")) {
+            err.put("message", "$onesignal.addtrigger has no value defined");
+          }
+		  JasonHelper.next("error", action, err, event, context);
+		}
+	  } else {
+		JSONObject err = new JSONObject();
+		err.put("message", "onesignal.addtrigger has no data defined");
+		JasonHelper.next("error", action, err, event, context);
+      }
+    } catch (JSONException e) {
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	}
+  }
+
+  // remove tag with removeTag()
+  public void removetrigger(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+	Log.d("Debug", "OneSignal removeTrigger");
+    try {
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+	    // JSONObject options = action.getJSONObject("options");
+	    JSONObject jason = data.getJSONObject("$jason");
+	    if (jason.has("key")) {
+		  	OneSignal.getInAppMessages().removeTrigger(jason.getString("key" ));
+		} else {
+            JSONObject err = new JSONObject();
+            err.put("message", "onesignal.removetrigger has no data key defined");
+            JasonHelper.next("error", action, err, event, context);
+		}
+      } else {
+          JSONObject err = new JSONObject();
+          err.put("message", "onesignal.removetrigger has no data defined");
+          JasonHelper.next("error", action, err, event, context);
+      }
+	} catch (JSONException e) {
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	}
   }
 
   // add tag with addTag()
   public void addtag(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	Log.d("Debug", "OneSignal addTag");
     try {
-      if (action.has("options")) {
-        JSONObject options = action.getJSONObject("options");
-        if (options.has("key") && options.has("value")) {
-          OneSignal.getUser().addTag(options.getString("key"), options.getString("value"));
-		  /* TODO: rerun gettags? */
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+        // JSONObject options = action.getJSONObject("options");
+		JSONObject jason = data.getJSONObject("$jason");
+        if (jason.has("key") && jason.has("value")) {
+          OneSignal.getUser().addTag(jason.getString("key"), jason.getString("value"));
+		  Map<String,String> tagsmap = OneSignal.getUser().getTags();
+	      Log.d("Debug", "New Tagsmap: "+tagsmap);
         } else {
 		  JSONObject err = new JSONObject();
-		  if (!options.has("key") && !options.has("value")) {
-            err.put("message", "$onesignal.addtag has no option key or value defined");
-		  } else if (!options.has("key")) {
-            err.put("message", "$onesignal.addtag has no option key defined");
-		  }	else if (!options.has("value")) {
-            err.put("message", "$onesignal.addtag has no option value defined");
+		  if (!jason.has("key") && !jason.has("value")) {
+            err.put("message", "$onesignal.addtag has no key or value defined");
+		  } else if (!jason.has("key")) {
+            err.put("message", "$onesignal.addtag has no key defined");
+		  }	else if (!jason.has("value")) {
+            err.put("message", "$onesignal.addtag has no value defined");
           }
 		  JasonHelper.next("error", action, err, event, context);
 		}
 	  } else {
 		JSONObject err = new JSONObject();
-		err.put("message", "onesignal.addtag has no options defined");
+		err.put("message", "onesignal.addtag has no data defined");
 		JasonHelper.next("error", action, err, event, context);
       }
     } catch (JSONException e) {
-	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	}
   }
 
@@ -184,38 +269,43 @@ public class JasonOnesignalAction {
   public void removetag(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	Log.d("Debug", "OneSignal removeTag");
     try {
-      if (action.has("options")) {
-	    JSONObject options = action.getJSONObject("options");
-	    if (options.has("key")) {
-		  	OneSignal.getUser().removeTag(options.getString("key" ));
-			/* TODO: rerun gettags ? */
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+	    // JSONObject options = action.getJSONObject("options");
+	    JSONObject jason = data.getJSONObject("$jason");
+	    if (jason.has("key")) {
+		  	OneSignal.getUser().removeTag(jason.getString("key" ));
+			Map<String,String> tagsmap = OneSignal.getUser().getTags();
+	        Log.d("Debug", "New Tagsmap: "+tagsmap);
 		} else {
             JSONObject err = new JSONObject();
-            err.put("message", "onesignal.removetag has no option key defined");
+            err.put("message", "onesignal.removetag has no data key defined");
             JasonHelper.next("error", action, err, event, context);
 		}
       } else {
           JSONObject err = new JSONObject();
-          err.put("message", "onesignal.removetag has no options defined");
+          err.put("message", "onesignal.removetag has no data defined");
           JasonHelper.next("error", action, err, event, context);
       }
 	} catch (JSONException e) {
-	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	}
   }
 
   // get tags with getTags()
-  public JSONObject gettags(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+  public void gettags(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	Log.d("Debug", "OneSignal getTags");
-	// try {
+	try {
       Map<String,String> tagsmap = OneSignal.getUser().getTags();
+	  Log.d("Debug", "OneSignal Tagsmap: "+tagsmap);
       JSONObject tags = new JSONObject(tagsmap);
-      JasonHelper.next("success", action, tags, event, context);
-      return tags;
-	// } catch (JSONException e) {
-	  // Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
-	// }
-    // return null;
+      JSONObject ret = new JSONObject();
+	  ret.put("tags", tags);
+	  Log.d("Debug", "OneSignal Tags Return: " + tags.toString());
+      JasonHelper.next("success", action, ret, event, context);
+	} catch (JSONException e) {
+	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	}
   }
 
   // opt in with optIn()
@@ -239,52 +329,55 @@ public class JasonOnesignalAction {
   }
 
   // opt status with optedIn()
-  public Boolean status(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+  public void status(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	Log.d("Debug", "OneSignal optedIn");
     try {
-	  Boolean optedin = OneSignal.getUser().getPushSubscription().getOptedIn();
+	  Boolean result = OneSignal.getUser().getPushSubscription().getOptedIn();
+	  String status = result ? "1" : "0";
       JSONObject ret = new JSONObject();
-      ret.put("status", optedin);
+      ret.put("status", status);
       JasonHelper.next("success", action, ret, event, context);
-	    return optedin;
     } catch (JSONException e) {
 	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
     }
-    return null;
   }
 
   // add sms with addSms()
   public void addsms(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	try {
-      if (action.has("options")) {
-	    JSONObject options = action.getJSONObject("options");
-	    if (options.has("number")) {
-		  	OneSignal.getUser().addSms(options.getString("number"));
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+	    // JSONObject options = action.getJSONObject("options");
+	    JSONObject jason = data.getJSONObject("$jason");
+	    if (jason.has("number")) {
+		  	OneSignal.getUser().addSms(jason.getString("number"));
 		} else {
             JSONObject err = new JSONObject();
-            err.put("message", "onesignal.addsms has no option number defined");
+            err.put("message", "onesignal.addsms has no number defined");
             JasonHelper.next("error", action, err, event, context);
 		}
       } else {
           JSONObject err = new JSONObject();
-          err.put("message", "onesignal.removesms has no options defined");
+          err.put("message", "onesignal.removesms has no data defined");
           JasonHelper.next("error", action, err, event, context);
       }
 	} catch (JSONException e) {
-	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	}
   }
 
   // remove sms with removeSms();
   public void removesms(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
 	try {
-      if (action.has("options")) {
-	    JSONObject options = action.getJSONObject("options");
-	    if (options.has("number")) {
-		  	OneSignal.getUser().removeSms(options.getString("number"));
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+	    // JSONObject options = action.getJSONObject("options");
+	    JSONObject jason = data.getJSONObject("$jason");
+	    if (jason.has("number")) {
+		  	OneSignal.getUser().removeSms(jason.getString("number"));
 		} else {
             JSONObject err = new JSONObject();
-            err.put("message", "onesignal.removesms has no option number defined");
+            err.put("message", "onesignal.removesms has no number defined");
             JasonHelper.next("error", action, err, event, context);
 		}
       } else {
@@ -293,7 +386,55 @@ public class JasonOnesignalAction {
           JasonHelper.next("error", action, err, event, context);
       }
 	} catch (JSONException e) {
-	  Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	}
+  }
+
+  // add email with addEmail()
+  public void addemail(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+	try {
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+	    // JSONObject options = action.getJSONObject("options");
+	    JSONObject jason = data.getJSONObject("$jason");
+	    if (jason.has("email")) {
+		  	OneSignal.getUser().addEmail(jason.getString("email"));
+		} else {
+            JSONObject err = new JSONObject();
+            err.put("message", "onesignal.addemail has no email defined");
+            JasonHelper.next("error", action, err, event, context);
+		}
+      } else {
+          JSONObject err = new JSONObject();
+          err.put("message", "onesignal.removeemail has no data defined");
+          JasonHelper.next("error", action, err, event, context);
+      }
+	} catch (JSONException e) {
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+	}
+  }
+
+  // remove email with removeEmail();
+  public void removeemail(final JSONObject action, JSONObject data, final JSONObject event, final Context context ) {
+	try {
+      // if (action.has("options")) {
+	  if (data.has("$jason")) {
+	    // JSONObject options = action.getJSONObject("options");
+	    JSONObject jason = data.getJSONObject("$jason");
+	    if (jason.has("email")) {
+		  	OneSignal.getUser().removeEmail(jason.getString("email"));
+		} else {
+            JSONObject err = new JSONObject();
+            err.put("message", "onesignal.removeemail has no email defined");
+            JasonHelper.next("error", action, err, event, context);
+		}
+      } else {
+          JSONObject err = new JSONObject();
+          err.put("message", "onesignal.removeemail has no data defined");
+          JasonHelper.next("error", action, err, event, context);
+      }
+	} catch (JSONException e) {
+	  Log.d("Warning", "OneSignal " + e.getStackTrace()[0].getMethodName() + " : " + e.toString());
 	}
   }
 

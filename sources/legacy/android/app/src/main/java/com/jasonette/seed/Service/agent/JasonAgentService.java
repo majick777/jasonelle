@@ -257,6 +257,7 @@ public class JasonAgentService {
                         }
 
                         // Call the Jasonette event
+						// Log.d("Debug", "Agent Trigger: " + m.toString());
                         Intent intent = new Intent("call");
                         intent.putExtra("action", m.toString());
                         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
