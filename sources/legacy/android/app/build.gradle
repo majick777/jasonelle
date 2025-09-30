@@ -1,87 +1,1 @@
-buildscript {
-    repositories {
-        maven { url 'https://plugins.gradle.org/m2/' }
-    }
-}
-
-repositories {
-    maven { url 'https://maven.google.com' }
-}
-
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion 33
-    // buildToolsVersion '30.0.0'
-    defaultConfig {
-        applicationId "com.jasonelle"
-        minSdkVersion 28
-        // Check https://developer.android.com/google/play/requirements/target-sdk for the latest required version
-        targetSdkVersion 33
-        versionCode 3
-        versionName "0.1.0"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        multiDexEnabled true
-    }
-    buildTypes {
-        release {
-            debuggable false
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-  namespace 'com.jasonette.seed'
-  lint {
-    disable 'ResourceType'
-  }
-}
-
-dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestImplementation('androidx.test.espresso:espresso-core:3.2.0', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-
-    debugImplementation 'com.facebook.stetho:stetho:1.5.1'
-    debugImplementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'
-    debugImplementation 'com.facebook.stetho:stetho-timber:1.5.1'
-    //noinspection GradleCompatible
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.2.0'
-    implementation 'com.github.bumptech.glide:glide:4.10.0'
-    implementation 'com.github.wasabeef:glide-transformations:4.0.0'
-    implementation 'com.eclipsesource.j2v8:j2v8:5.0.103@aar'
-    //implementation 'com.android.support:recyclerview-v7:27.1.1'
-    implementation 'androidx.recyclerview:recyclerview:1.0.0'
-    //implementation 'com.android.support:design:27.1.1'
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'com.aurelhubert:ahbottomnavigation:2.0.2'
-    //implementation 'com.android.support:support-core-ui:27.1.1'
-    implementation 'androidx.legacy:legacy-support-core-ui:1.0.0'
-    implementation 'commons-lang:commons-lang:20030203.000129'
-    implementation 'com.github.scribejava:scribejava-apis:6.8.1'
-    //implementation 'com.yqritc:recyclerview-flexibledivider:1.4.0'
-    implementation 'com.commonsware.cwac:cam2:0.7.4'
-    implementation 'com.github.maks:AndroidAudioRecorder:0.3.0-jasonette'
-    implementation 'com.github.florent37:singledateandtimepicker:1.0.8'
-    implementation 'com.jakewharton.timber:timber:4.7.1'
-    //noinspection UseOfBundledGooglePlayServices
-    //implementation 'com.android.support:multidex:1.0.3'
-    implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'com.android.volley:volley:1.2.1'
-    implementation 'com.facebook.stetho:stetho:1.5.1'
-    implementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'
-    implementation 'com.google.android.gms:play-services-vision:18.0.0'
-    implementation 'com.google.android.gms:play-services-maps:17.0.0'
-    implementation 'org.hjson:hjson:3.0.0'
-
-    implementation 'com.google.firebase:firebase-messaging:20.1.0'
-
-    // OneSignal
-    // Uncomment if you want OneSignal Setup
-    // check https://documentation.onesignal.com/docs/android-sdk-setup
-    // check https://github.com/jasonelle-archive/jasonelle-v2/wiki/Push-notifications-integration-with-OneSignal#3--extend-your-jasonette-app-to-receive-targeted-notifications
-
-    implementation 'com.onesignal:OneSignal:[5.0.0, 5.99.99]'
-}
+// --- build script and dependencies ---buildscript {    repositories {        maven { url 'https://plugins.gradle.org/m2/' }		mavenCentral()    }	dependencies {		classpath "org.codehaus.groovy:groovy-json:3.0.17"		// classpath "org.json:json:20230227"		classpath "net.coobird:thumbnailator:0.4.14"	}}// --- package source repositories ---repositories {    maven { url 'https://maven.google.com' }}// --- explicit import of dependencies required for icon generation ---/* import javax.imageio.ImageIOimport java.awt.*import java.awt.geom.Ellipse2Dimport java.awt.image.BufferedImage */import net.coobird.thumbnailator.Thumbnailsimport net.coobird.thumbnailator.geometry.Positionsimport java.awt.geom.Ellipse2Dimport java.awt.AlphaCompositeimport java.awt.image.BufferedImageimport java.awt.Graphics2Dimport javax.imageio.ImageIO// --- configure project as android app ---apply plugin: 'com.android.application'// --- pull package ID and version from config.json ---def configFile = file("${project.rootDir}/config.json")if (!configFile.exists()) {	throw new FileNotFoundException("Config JSON file not found: ${configFile}")}def AppId = nulldef Version = nulldef BuildNumber = nullif (configFile.exists()) {    def jsonSlurper = new groovy.json.JsonSlurper()    def jsonconfig = jsonSlurper.parseText(configFile.text)    AppId = jsonconfig.app_id	Version = jsonconfig.app_version	def digits = Version.replaceAll(/[^0-9]/, '')	BuildNumber = (digits.toInteger() * 100)	logger.lifecycle( "ANDROID APP ID ${AppId}" )	logger.lifecycle( "APP VERSION ${Version}" )	logger.lifecycle( "APP BUILD ${BuildNumber}" )}// --- main app declaration ---android {    compileSdkVersion 33    // buildToolsVersion '30.0.0'    defaultConfig {        applicationId AppId ?: "com.jasonelle"        minSdkVersion 28        // Check https://developer.android.com/google/play/requirements/target-sdk for the latest required version        targetSdkVersion 33        versionCode BuildNumber ?: 30000         versionName Version ?: "3.0.0"        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"        multiDexEnabled true        buildConfigField "String", "ONESIGNAL_APP_ID", "\"\""	    buildConfigField "String", "ONESIGNAL_START_PROMPT", "\"0\""        buildConfigField "String", "QONVERSION_PROJECT_KEY", "\"\""    }    buildTypes {        release {            debuggable false            minifyEnabled false            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'		    buildConfigField "String", "ONESIGNAL_APP_ID", "\"\""		    buildConfigField "String", "ONESIGNAL_START_PROMPT", "\"0\""		    buildConfigField "String", "QONVERSION_PROJECT_KEY", "\"\""        }    }    namespace 'com.jasonette.seed'    lint {      disable 'ResourceType'    }    // Define a task to read the config file and update strings.xml    task updateStrings {		def jsonFile = file("${project.rootDir}/config.json")		def jsonContent		if (jsonFile.exists()) {			def text = jsonFile.getText('UTF-8')			text = text.replaceAll(/^\{|\}$/, '')						// -- parse the JSON --			def jasonMap = [:]			text.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).each { pair ->				def (k,v) = pair.split(/:(?=(?:[^"]*"[^"]*")*[^"]*$)/,2)				k = k.trim().replaceAll(/^"|"$/, '')				v = v.trim()				if (v.startsWith('"') && v.endsWith('"')) v = v.replaceAll(/^"|"$/, '')				else if (v == 'true' || v == 'false') v = v.toBoolean()				else if (v.matches(/-?\d+(\.\d+)?/)) v = v.contains('.') ? v.toDouble() : v.toInteger()				jasonMap[k]=v			}			// -- get and replace strings values --			def stringsSource = file("${project.projectDir}/src/main/strings.xml")			def stringsFile = file("${project.projectDir}/src/main/res/values/strings.xml")			def stringsContent = stringsSource.getText('UTF-8')			// logger.lifecycle( "${stringsContent}" )			def onesignal_app_id = '';			def onesignal_start_prompt = '0';			def qonversion_project_key = '';			def keystring = '';			jasonMap.each { key, value ->				keystring = key.toString();				if (keystring == 'onesignal_app_id') {					logger.lifecycle( "ONESIGNAL APP ID MATCH" )					onesignal_app_id = value.toString();				}				if (keystring == 'onesignal_start_prompt') {					logger.lifecycle( "ONESIGNAL STARTPROMPT MATCH" )					onesignal_start_prompt = value.toString();				}				if (keystring == 'qonversion_project_key') {					logger.lifecycle( "QONVERSION PROJECT MATCH" )					qonversion_project_key = value.toString();				}				if ( (keystring != 'onesignal_app_id')					&& (keystring != 'qonversion_start_prompt')					&& (keystring != 'qonversion_project_key') ) {					logger.lifecycle( "Key: ${key} - Value: ${value}" )					def find = '\\$' + '\\{' + "${key}" + '}'					stringsContent = stringsContent.replaceAll(find, value.toString())				}			}			logger.lifecycle( "ONESIGNAL APP ID ${onesignal_app_id}" )			logger.lifecycle( "ONESIGNAL STARTPROMPT? ${onesignal_start_prompt}" )			logger.lifecycle( "QONVERSION PROJECT KEY ${qonversion_project_key}" )			// -- write the updated content back to strings.xml --			stringsFile.write(stringsContent, 'UTF-8')			// --- do the same for any colors ---			def colorsSource = file("${project.projectDir}/src/main/colors.xml")			def colorsFile = file("${project.projectDir}/src/main/res/values/colors.xml")			def colorsContent = colorsSource.getText('UTF-8')			jasonMap.each { key, value ->				keystring = key.toString();				def find = '\\$' + '\\{' + "${key}" + '}'				colorsContent = colorsContent.replaceAll(find, value.toString())			}			// -- write the updated content back to colors.xml --			colorsFile.write(colorsContent, 'UTF-8')			// -- add service IDs to BuildConfig fields --			android.buildTypes.each { buildType ->				buildType.buildConfigField "String", "ONESIGNAL_APP_ID", "\"${onesignal_app_id}\""				buildType.buildConfigField "String", "ONESIGNAL_START_PROMPT", "\"${onesignal_start_prompt}\""				buildType.buildConfigField "String", "QONVERSION_PROJECT_KEY", "\"${qonversion_project_key}\""			}		}    }	// --- copy files ---	task copyFiles {		// -- maybe copy custom preload.json --	    def preloadFile = file("${project.rootDir}/preload.json")        if (preloadFile.exists()) {            copy {                from preloadFile                into assetsDir            }		}	}	// --- task to generate icon sizes ---	task generateIcons {		// -- sizes for launcher icons --		def launcherSizes = [			"mipmap-mdpi": 48,			"mipmap-hdpi": 72,			"mipmap-xhdpi": 96,			"mipmap-xxhdpi": 144,			"mipmap-xxxhdpi": 192		]		// -- sizes for round launcher icons --		def roundLauncherSizes = [			"mipmap-mdpi": 48,			"mipmap-hdpi": 72,			"mipmap-xhdpi": 96,			"mipmap-xxhdpi": 144,			"mipmap-xxxhdpi": 192		]		// -- sizes for adaptive icons --		def adaptiveSizes = [			"drawable-mdpi": 24,			"drawable-hdpi": 36,			"drawable-xhdpi": 48,			"drawable-xxhdpi": 72,			"drawable-xxxhdpi": 96		]		// -- set directories --		def assetsDir = file("${project.projectDir}/src/main/assets/file")		def mainDir = file("${project.projectDir}/src/main")		// -- check logo file --	    def logoFile = file("${project.rootDir}/logo.png")        		if (!logoFile.exists()) {			throw new GradleException("logo.png not found at ${logoFile.path}")		}		// -- copy logo file (used by preload.json) --		copy {			from logoFile			into assetsDir		}				// -- copy main launcher icon --		copy {			from logoFile			into mainDir			rename { "ic_launcher-playstore.png" }		}		// -- generate launcher icons --		launcherSizes.each { dirName, size ->			def outputDir = file("${project.projectDir}/src/main/res/${dirName}")			def outputFile = file("${outputDir}/ic_launcher.png")			resizeImage(logoFile, size, outputFile);		}		// -- generate round launcher icons --		roundLauncherSizes.each { dirName, size ->			def outputDir = file("${project.projectDir}/src/main/res/${dirName}")			def outputFile = file("${outputDir}/ic_round.png")			createRoundImage(logoFile, size, outputFile);		}		// -- generate adaptive icons --		adaptiveSizes.each { dirName, size ->			def outputDir = file("${project.projectDir}/src/main/res/${dirName}")			if (!outputDir.exists()) {				if (!outputDir.mkdirs()) {					throw new GradleException("Failed to create directory: $outFile.parentFile")				}			}			def outputFile = file("${outputDir}/ic_foreground.png")			logger.lifecycle( "${outputFile}" )				createAdaptiveImage(logoFile, size, outputFile);		}	}    // -- ensure prebuild tasks run before the build process --    preBuild.dependsOn updateStrings	preBuild.dependsOn copyFiles	preBuild.dependsOn generateIcons}def resizeImage(File srcFile, int size, File outFile) {	Thumbnails.of(srcFile)	.size(size, size)	.crop(Positions.CENTER)	.outputFormat("png")	.allowOverwrite(true)	.toFile(outFile)}def createRoundImage(File srcFile, int size, File outFile) {	// produce a slightly larger image and then mask for crisper edges (2x then downscale)	int work = size * 2	BufferedImage tmp = Thumbnails.of(srcFile)	.size(work, work)	.crop(Positions.CENTER)	.asBufferedImage()	// create circular mask and composite	BufferedImage circle = new BufferedImage(work, work, BufferedImage.TYPE_INT_ARGB)	Graphics2D g = circle.createGraphics()	try {		g.setComposite(AlphaComposite.Clear)		g.fillRect(0, 0, work, work)		g.setComposite(AlphaComposite.SrcOver)		g.setClip(new Ellipse2D.Float(0f, 0f, work as float, work as float))		g.drawImage(tmp, 0, 0, null)	} finally {		g.dispose()	}	// downscale to final size with Thumbnailator for best quality	Thumbnails.of(circle)		.size(size, size)		.outputFormat("png")		.toFile(outFile)}// adaptive image: preserve aspect and center into square canvas (letterbox-like)def createAdaptiveImage(File srcFile, int size, File outFile) {	// work at 2x to retain sharpness	int canvasSize = size * 2	BufferedImage scaled = Thumbnails.of(srcFile)	.size(canvasSize, canvasSize)	.keepAspectRatio(true)	.asBufferedImage()	// create transparent canvas and center the scaled image	BufferedImage canvas = new BufferedImage(canvasSize, canvasSize, BufferedImage.TYPE_INT_ARGB)	Graphics2D g = canvas.createGraphics()	try {		g.setComposite(AlphaComposite.Clear)		g.fillRect(0, 0, canvasSize, canvasSize)		g.setComposite(AlphaComposite.SrcOver)		int x = (canvasSize - scaled.width) / 2		int y = (canvasSize - scaled.height) / 2		g.drawImage(scaled, x, y, null)	} finally {		g.dispose()	}	// downscale to target size with high-quality resampling	Thumbnails.of(canvas)    .size(size, size)    .outputFormat("png")    .toFile(outFile)}// --- dependencies ---dependencies {    implementation fileTree(include: ['*.jar'], dir: 'libs')    androidTestImplementation('androidx.test.espresso:espresso-core:3.2.0', {        exclude group: 'com.android.support', module: 'support-annotations'    })    debugImplementation 'com.facebook.stetho:stetho:1.5.1'    debugImplementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'    debugImplementation 'com.facebook.stetho:stetho-timber:1.5.1'    //noinspection GradleCompatible    implementation 'androidx.appcompat:appcompat:1.1.0'    implementation 'androidx.appcompat:appcompat:1.1.0'    implementation 'com.squareup.okhttp3:okhttp:4.2.0'    implementation 'com.github.bumptech.glide:glide:4.10.0'    implementation 'com.github.wasabeef:glide-transformations:4.0.0'    implementation 'com.eclipsesource.j2v8:j2v8:5.0.103@aar'    // implementation 'com.android.support:recyclerview-v7:27.1.1'    implementation 'androidx.recyclerview:recyclerview:1.0.0'    // implementation 'com.android.support:design:27.1.1'    implementation 'com.google.android.material:material:1.0.0'    implementation 'com.aurelhubert:ahbottomnavigation:2.0.2'    // implementation 'com.android.support:support-core-ui:27.1.1'    implementation 'androidx.legacy:legacy-support-core-ui:1.0.0'    implementation 'commons-lang:commons-lang:20030203.000129'    implementation 'com.github.scribejava:scribejava-apis:6.8.1'    // implementation 'com.yqritc:recyclerview-flexibledivider:1.4.0'    implementation 'com.commonsware.cwac:cam2:0.7.4'    implementation 'com.github.maks:AndroidAudioRecorder:0.3.0-jasonette'    implementation 'com.github.florent37:singledateandtimepicker:1.0.8'    implementation 'com.jakewharton.timber:timber:4.7.1'    // noinspection UseOfBundledGooglePlayServices    // implementation 'com.android.support:multidex:1.0.3'    implementation 'androidx.multidex:multidex:2.0.1'    implementation 'com.android.volley:volley:1.2.1'    implementation 'com.facebook.stetho:stetho:1.5.1'    implementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'    implementation 'com.google.android.gms:play-services-vision:18.0.0'    implementation 'com.google.android.gms:play-services-maps:17.0.0'    implementation 'org.hjson:hjson:3.0.0'    implementation 'com.google.firebase:firebase-messaging:20.1.0'    // -- OneSignal --    // check https://documentation.onesignal.com/docs/android-sdk-setup    // check https://github.com/jasonelle-archive/jasonelle-v2/wiki/Push-notifications-integration-with-OneSignal#3--extend-your-jasonette-app-to-receive-targeted-notifications    // implementation 'com.onesignal:OneSignal:[5.0.0, 5.99.99]'	implementation 'com.onesignal:OneSignal:[5.1.6, 5.1.99]'	// -- Qonversion --	implementation 'io.qonversion.android.sdk:sdk:8.+'}
